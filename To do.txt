@@ -1,0 +1,6 @@
+0. Figure out why my resampled pitches have different % balls and strikes compared to original pitches
+	-is it weird outlier pitches not getting counted?
+
+1. Write helper function that creates new column on pitch_ab dataframe that converts pitch['des'] and ab['event'] to a unified column with factors [ball, swing strike, call strike, single, double, triple, HR, out]
+
+2. Check if my dynamic appending of pandas dataframes in helpers.get_samples_from_templates() is causing a slowdown

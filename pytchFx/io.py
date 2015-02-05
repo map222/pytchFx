@@ -17,7 +17,7 @@ def load_pitches(year, row_limit = 1000000 ):
     row_limit" is in case you want to limit how much info you get
     """
     
-    pdb.set_trace()
+    #pdb.set_trace()
     
     # open connection to sqlite database
     filename = 'pitchFX_' + str(year) + '.sqlite3'
