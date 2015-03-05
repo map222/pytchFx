@@ -1,0 +1,19 @@
+The simple Monte-Carlo style sampling has a problem for the edge of the strikezone. Because most pitches are in the zone, if you try to sample pitches in a range around a given pitch, your sample will be biased towards the strike zone, and your ball/strike numbers will be off. For example, with a sample of pitches centered around -1 feet in x-axis, you get these results:
+In play, no out    0.048674
+In play, out(s)    0.141431
+In play, run(s)    0.024187
+Called Strike      0.246617
+Hit By Pitch       0.000048
+Ball               0.237676
+Foul               0.210420
+Swinging Strike    0.090935
+
+But for the resampled data based off these pitches, you get these results:
+In play, no out    0.067897
+In play, out(s)    0.178308
+In play, run(s)    0.030812
+Called Strike      0.281892
+Hit By Pitch       0.000053
+Ball               0.111492
+Foul               0.255271
+Swinging Strike    0.074275
