@@ -6,6 +6,7 @@ Created on Thu Jan 08 20:45:46 2015
 """
 import pdb
 import pandas as pd
+import numpy as np
 
 # return all pitches similar to a given single template
 def get_pitches_from_template(tp, ap, sp_var = 1, px_var = 0.15, pz_var = 0.15,
@@ -16,7 +17,6 @@ def get_pitches_from_template(tp, ap, sp_var = 1, px_var = 0.15, pz_var = 0.15,
     sp_var = speed, px/pz = location over plate, br_angle = break
     """
     
-    #pdb.set_trace()
     # convert all the values into scalars for input into query
     tp_end_speed = float(tp.end_speed) 
     tp_px = float(tp.px)
@@ -42,7 +42,7 @@ def get_pitches_from_templates(template_pitches, all_pitches):
         template_pitches: dataframe[indices] (NOT dataframe.loc[indices])
         all_pitches: full dataframe """
     # create empty dataframe
-    resampled_pitches = pd.DataFrame(columns = all_pitches.columns.values.tolist())     
+    resampled_pitches = pd.DataFrame(columns = all_pitches.columns.values.tolist())
     
     # go through all template pitches, and add new data (need append because can be multiple pitches)
     for i, row in template_pitches.iterrows():
@@ -63,7 +63,7 @@ def calc_results_from_pitches(pitch_abs):
     balls = des_results[['Ball', 'Ball In Dirt', 'Intent Ball', 'Pitchout']].sum()
     fouls = des_results[['Foul', 'Foul (Runner Going)', 'Foul Tip', 'Foul Bunt']].sum()
     swing_strikes = des_results[['Swinging Strike', 'Missed Bunt', 'Swinging Strike (Blocked)']].sum()
-    #pdb.set_trace()
+    
     kept_results = des_results[['In play, no out', 'In play, out(s)', 'In play, run(s)', 'Called Strike', 'Hit By Pitch']]
         
     return kept_results.append(pd.Series([balls, fouls, swing_strikes], ['Ball', 'Foul', 'Swinging Strike']))
@@ -77,14 +77,14 @@ def merge_pitch_ab(pitches_in, abs_in):
 
 # this way of cleaning results in the database is super slow
 # better to just do it afterwards
-def clean_results(pitch_abs):
-    """ Group all of the rare events into more common descriptors """
-    pitch_abs.replace('Ball In Dirt', 'Ball', inplace = True)
-    pitch_abs.replace('Foul (Runner Going)', 'Foul', inplace = True)
-    pitch_abs.replace('Foul Tip', 'Foul', inplace = True)
-    pitch_abs.replace('Foul Bunt', 'Foul', inplace = True)
-    pitch_abs.replace('Intent Ball', 'Ball', inplace = True)
-    pitch_abs.replace('Pitchout', 'Ball', inplace = True)
-    pitch_abs.replace('Missed Bunt', 'Swinging Strike', inplace = True)
-    pitch_abs.replace('Swinging Strike (Blocked)', 'Swinging Strike', inplace = True)
-    return pitch_abs
+#def clean_results(pitch_abs):
+#    """ Group all of the rare events into more common descriptors """
+#    pitch_abs.replace('Ball In Dirt', 'Ball', inplace = True)
+#    pitch_abs.replace('Foul (Runner Going)', 'Foul', inplace = True)
+#    pitch_abs.replace('Foul Tip', 'Foul', inplace = True)
+#    pitch_abs.replace('Foul Bunt', 'Foul', inplace = True)
+#    pitch_abs.replace('Intent Ball', 'Ball', inplace = True)
+#    pitch_abs.replace('Pitchout', 'Ball', inplace = True)
+#    pitch_abs.replace('Missed Bunt', 'Swinging Strike', inplace = True)
+#    pitch_abs.replace('Swinging Strike (Blocked)', 'Swinging Strike', inplace = True)
+#    return pitch_abs

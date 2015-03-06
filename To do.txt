@@ -1,5 +1,4 @@
-0. Figure out why my resampled pitches have different % balls and strikes compared to original pitches
-	-is it weird outlier pitches not getting counted?
+0. Rework my resampling code to not dynamically change the size of the results.
 
 1. Write helper function that creates new column on pitch_ab dataframe that converts pitch['des'] and ab['event'] to a unified column with factors [ball, swing strike, call strike, single, double, triple, HR, out]
 

@@ -22,9 +22,10 @@ def load_pitches(year, row_limit = 1000000 ):
     # open connection to sqlite database
     filename = 'pitchFX_' + str(year) + '.sqlite3'
     db = sqlite3.connect(filename)
+    pitch_columns = 'des, px, pz, x0, z0, end_speed, break_angle, break_y, break_length, gameday_link, num, count'
     
     # load the pitches in
-    pitches_out = pd.read_sql('SELECT * FROM pitch LIMIT ' + str(row_limit), db)
+    pitches_out = pd.read_sql('SELECT ' + pitch_columns + ' FROM pitch LIMIT ' + str(row_limit), db)
     
     # fix the datatype of the break from text to int
     pitches_out['break_angle'] = pitches_out['break_angle'].astype(float)
@@ -39,8 +40,9 @@ def load_abs(year, row_limit = 1000000):
     # open connection to sqlite database
     filename = 'pitchFX_' + str(year) + '.sqlite3'
     db = sqlite3.connect(filename)
+    atbat_columns = 'pitcher, batter, num, gameday_link, batter_name, pitcher_name, event, p_throws, b_height, stand'
     
     # load the pitches in
-    abs_out = pd.read_sql('SELECT * FROM atbat LIMIT ' + str(row_limit), db)
+    abs_out = pd.read_sql('SELECT ' + atbat_columns + ' FROM atbat LIMIT ' + str(row_limit), db)
     
     return abs_out
