@@ -8,6 +8,8 @@ import pdb
 import pandas as pd
 import numpy as np
 
+
+
 # return all pitches similar to a given single template
 def get_pitches_from_template(tp, ap, sp_var = 1, px_var = 0.15, pz_var = 0.15,
                               x0_var = 0.5, z0_var = 0.5, br_angle_var = 10 ):
@@ -41,17 +43,14 @@ def get_pitches_from_templates(template_pitches, all_pitches):
         calls get_pitches_from_template function for each pitch times)
         template_pitches: dataframe[indices] (NOT dataframe.loc[indices])
         all_pitches: full dataframe """
-    # create empty dataframe
-    resampled_pitches = pd.DataFrame(columns = all_pitches.columns.values.tolist())
+    
+    resampled_pitches = [] # a list of dataframes with resampled data
     
     # go through all template pitches, and add new data (need append because can be multiple pitches)
     for i, row in template_pitches.iterrows():
-        resampled_pitches = resampled_pitches.append(get_pitches_from_template(row, all_pitches))
-    # the dynamic addition works fine for small samples, but as you go beyond say 200 pitches, it nonlinearly slows thing down
-        # time / pitch for 100 pitches = 0.08sec
-        # time / pitch for 2000 pitches = 0.27 sec
-        
-    return resampled_pitches
+        resampled_pitches.append(get_pitches_from_template(row, all_pitches))
+    
+    return pd.concat(resampled_pitches) # concatenate all the dataframes into one
     
 def calc_results_from_pitches(pitch_abs):
     """ calculates results from a pitch_ab dataframe
@@ -63,28 +62,55 @@ def calc_results_from_pitches(pitch_abs):
     balls = des_results[['Ball', 'Ball In Dirt', 'Intent Ball', 'Pitchout']].sum()
     fouls = des_results[['Foul', 'Foul (Runner Going)', 'Foul Tip', 'Foul Bunt']].sum()
     swing_strikes = des_results[['Swinging Strike', 'Missed Bunt', 'Swinging Strike (Blocked)']].sum()
+    in_play = des_results[['In play, no out', 'In play, out(s)', 'In play, run(s)']].sum()
     
-    kept_results = des_results[['In play, no out', 'In play, out(s)', 'In play, run(s)', 'Called Strike', 'Hit By Pitch']]
+    kept_results = des_results[['Called Strike', 'Hit By Pitch']]
         
-    return kept_results.append(pd.Series([balls, fouls, swing_strikes], ['Ball', 'Foul', 'Swinging Strike']))
-    
-#def get_subset_pitches(pitch_abs_in):
+    return kept_results.append(pd.Series([balls, fouls, swing_strikes, in_play], ['Ball', 'Foul', 'Swinging Strike', 'In Play']))
             
 def merge_pitch_ab(pitches_in, abs_in):
     """ merge a pitch and atbat dataframe """
     # create merged db with just information about pitch, and results it got    
     return pd.merge(pitches_in, abs_in, how = 'inner', on=['num', 'gameday_link'])
 
-# this way of cleaning results in the database is super slow
-# better to just do it afterwards
-#def clean_results(pitch_abs):
-#    """ Group all of the rare events into more common descriptors """
-#    pitch_abs.replace('Ball In Dirt', 'Ball', inplace = True)
-#    pitch_abs.replace('Foul (Runner Going)', 'Foul', inplace = True)
-#    pitch_abs.replace('Foul Tip', 'Foul', inplace = True)
-#    pitch_abs.replace('Foul Bunt', 'Foul', inplace = True)
-#    pitch_abs.replace('Intent Ball', 'Ball', inplace = True)
-#    pitch_abs.replace('Pitchout', 'Ball', inplace = True)
-#    pitch_abs.replace('Missed Bunt', 'Swinging Strike', inplace = True)
-#    pitch_abs.replace('Swinging Strike (Blocked)', 'Swinging Strike', inplace = True)
-#    return pitch_abs
+def calc_runs_all_pitches(pitch_abs):
+    """ Calculate the expected runs per pitch; need pitch_ab dataframe to get results of hits """
+    pitch_abs['exp_val'] = pitch_abs.apply(calc_runs_per_pitch, axis = 1)    
+    
+    return pitch_abs
+
+    #counts =                [0-0,   0-1,   0-2,   1-0,  1-1,   1-2,   2-0,   2-1, 2-2, 3-0, 3-1, 3-2]
+    ball_value = np.array(   [0.034, 0.029, 0.022, 0.05, 0.045, 0.035, 0.099, 0.09, 0.085, 0.112, 0.17, 0.243])
+    strike_value = -1 * np.array([0.038, 0.051, 0.155, 0.043, 0.058, 0.178, 0.049, 0.067, 0.213, 0.058, 0.073, 0.298])
+    count_distrib = np.array([0.26, 0.13, 0.06, 0.1, 0.1, 0.093, 0.036, 0.053, 0.079, 0.012, 0.022, 0.047])
+    val_ball = np.sum(ball_value * count_distrib)
+    val_strike = np.sum(strike_value * count_distrib)
+    
+    true_dict = {}
+    true_dict.update(dict.fromkeys(['Ball', 'Ball In Dirt', 'Intent Ball', 'Pitchout'], val_ball))
+    true_dict.update(dict.fromkeys(['Foul', 'Foul (Runner Going)', 'Foul Tip', 'Foul Bunt',
+                                     'Called Strike', 'Swinging Strike', 'Missed Bunt',
+                                     'Swinging Strike (Blocked)'], val_strike))
+    true_dict.update(dict.fromkeys(['In play, no out', 'In play, out(s)', 'In play, run(s)'], np.nan ))
+    true_dict.update(dict.fromkeys(['Hit By Pitch'], 0.33))
+    
+    hit_dict = { }
+    hit_dict.update(dict.fromkeys(['Groundout', 'Flyout', 'Lineout', 'Grounded Into DP',
+                                   'Bunt Groundout', 'Pop Out', 'Field Error', 'Sac Fly', 'Sac Bunt',
+                                   'Forceout'], -0.27))
+    hit_dict.update(dict.fromkeys(['Single'], 0.47))
+    hit_dict.update(dict.fromkeys(['Double'], 0.75))
+    hit_dict.update(dict.fromkeys(['Triple'], 1.04))
+    hit_dict.update(dict.fromkeys(['Home Run'], 1.4))
+
+def calc_runs_per_pitch(pitch_ab):
+    """ Function called by calc_runs_per_pitch and applied to each row """
+
+    
+    value_out = true_dict[pitch_ab['des']]
+
+    # if the value_out is NaN, it means the ball was in play    
+    if np.isnan(value_out):
+        value_out = hit_dict[pitch_ab['event']]
+    
+    return value_out
